@@ -1,3 +1,4 @@
+
 """PostgreSQL integration tests for append-only records."""
 
 from datetime import datetime, timezone
@@ -25,6 +26,7 @@ def test_ct29_immutable_tables_reject_update_delete_and_accept_insert(
     audit_id = f"audit-{uuid4().hex}"
     approval_id = f"approval-{uuid4().hex}"
     movement_id = f"movement-{uuid4().hex}"
+
     with pg_session_factory.begin() as session:
         session.add_all(
             [
@@ -41,21 +43,35 @@ def test_ct29_immutable_tables_reject_update_delete_and_accept_insert(
                     name="Material CT-29",
                     quantity_total=1,
                 ),
-                Reservation(
-                    id=reservation_id,
-                    solicitante_id=user_id,
-                    reason="Reserva CT-29",
-                    status="CONFIRMADA",
-                ),
-                ReservationItem(
-                    id=item_id,
-                    reservation_id=reservation_id,
-                    resource_type="material",
-                    resource_id=material_id,
-                    start=START,
-                    end=END,
-                    status="CONFIRMADA",
-                ),
+            ]
+        )
+        session.flush()
+
+        session.add(
+            Reservation(
+                id=reservation_id,
+                solicitante_id=user_id,
+                reason="Reserva CT-29",
+                status="CONFIRMADA",
+            )
+        )
+        session.flush()
+
+        session.add(
+            ReservationItem(
+                id=item_id,
+                reservation_id=reservation_id,
+                resource_type="material",
+                resource_id=material_id,
+                start=START,
+                end=END,
+                status="CONFIRMADA",
+            )
+        )
+        session.flush()
+
+        session.add_all(
+            [
                 AuditEntry(
                     id=audit_id,
                     entity_type="reservation",

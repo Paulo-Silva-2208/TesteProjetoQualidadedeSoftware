@@ -247,6 +247,18 @@ def test_ct38_each_avoided_conflict_is_audited_and_counted_by_report(
             params={"start": report_start.isoformat(), "end": report_end.isoformat()},
         )
         assert report.status_code == 200
-        assert report.json()["conflicts_avoided"] == len(events)
+
+        with pg_session_factory() as session:
+            all_events = list(
+                session.scalars(
+                    select(AuditEntry).where(
+                        AuditEntry.action == "CONFLITO_EVITADO",
+                        AuditEntry.created_at >= report_start,
+                        AuditEntry.created_at < report_end,
+                    )
+                )
+            )
+        assert report.json()["conflicts_avoided"] == len(all_events)
+        assert len(events) == len(expected)
     finally:
         app.dependency_overrides.pop(get_db, None)
